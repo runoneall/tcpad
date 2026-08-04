@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import pathlib
+import socket
+import threading
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
@@ -50,6 +52,18 @@ class App(tk.Tk):
 
         self.notebook.bind("<<NotebookTabChanged>>", on_tab_changed)
 
+        tk.Label(self.client_tab, text="对方 IP:").grid(row=0, column=0, padx=(10, 5), pady=8, sticky=tk.E)
+        tk.Entry(self.client_tab, textvariable=self.controller.client_ip).grid(row=0, column=1, padx=(0, 10), pady=8, sticky=tk.W)
+
+        tk.Label(self.client_tab, text="对方端口:").grid(row=1, column=0, padx=(10, 5), pady=8, sticky=tk.E)
+        tk.Spinbox(self.client_tab, from_=1, to=65535, increment=1, textvariable=self.controller.client_port).grid(row=1, column=1, padx=(0, 10), pady=8, sticky=tk.W)
+
+        client_button_frame = tk.Frame(self.client_tab)
+        client_button_frame.grid(row=2, column=0, columnspan=2, pady=15)
+
+        tk.Button(client_button_frame, text="连接", width=8, command=self.controller.connect).pack(side=tk.LEFT, padx=5)
+        tk.Button(client_button_frame, text="断开", width=8, command=self.controller.disconnect).pack(side=tk.LEFT, padx=5)
+
         for i in range(1, 11):
             row = tk.Frame(self.quick_input_area)
             row.pack(fill=tk.X, pady=2)
@@ -77,7 +91,7 @@ class App(tk.Tk):
             if event.keysym == "Return":
                 data = textarea.get("insert linestart", "insert lineend").strip()
                 textarea.insert(tk.END, "\n")
-                self.controller.submit(data)
+                self.controller.submit(data + "\n")
                 return "break"
 
         def on_message(data: str) -> None:
@@ -124,11 +138,77 @@ class Controller:
     def __init__(self, app: App) -> None:
         self.app = app
 
+        self.client_ip = tk.StringVar(value="")
+        self.app.config.bind("client_ip", self.client_ip)
+
+        self.client_port = tk.IntVar(value=0)
+        self.app.config.bind("client_port", self.client_port)
+
+        self.sock: socket.socket | None = None
+
     def submit(self, data: str) -> None:
-        self.on_message(data)
+        if self.sock:
+            try:
+                self.sock.sendall(data.encode("utf-8"))
+
+            except Exception as e:
+                self.on_message(f"[系统] 发送数据失败: {e}")
+                self.disconnect()
+
+        else:
+            self.on_message("[系统] 未建立连接")
 
     def on_message(self, data: str) -> None:
         pass
+
+    def connect(self) -> None:
+        if self.sock:
+            self.on_message("[系统] 当前已有活跃连接")
+            return
+
+        ip = self.client_ip.get().strip()
+        port = self.client_port.get()
+
+        self.on_message(f"[系统] 正在尝试连接至 {ip}:{port} ...")
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((ip, port))
+            self.sock = sock
+            self.on_message(f"[系统] 成功连接至 {ip}:{port}")
+
+        except Exception as e:
+            self.on_message(f"[系统] 连接失败: {e}")
+            return
+
+        def listen() -> None:
+            while self.sock:
+                try:
+                    data = self.sock.recv(1024)
+                    if not data:
+                        self.app.after(0, self.on_message, "[系统] 远程主机已关闭连接")
+                        break
+
+                    text = data.decode("utf-8", errors="ignore")
+                    self.app.after(0, self.on_message, text)
+
+                except Exception:
+                    break
+
+            self.app.after(0, self.disconnect)
+
+        threading.Thread(target=listen, daemon=True).start()
+
+    def disconnect(self) -> None:
+        sock = self.sock
+        self.sock = None
+
+        if sock:
+            try:
+                sock.close()
+                self.on_message("[系统] 已断开连接")
+
+            except Exception as e:
+                self.on_message(f"[系统] 断开连接时出错: {e}")
 
 
 if __name__ == "__main__":
