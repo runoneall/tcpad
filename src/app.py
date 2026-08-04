@@ -42,12 +42,9 @@ class App(tk.Tk):
 
         def on_input(event: tk.Event[tk.Text]) -> object:
             if event.keysym == "Return":
-                self.controller.submit()
+                data = textarea.get("insert linestart", "insert lineend").strip()
+                self.controller.submit(data)
                 return "break"
-
-            elif event.char and event.char.isprintable():
-                old = self.controller.input.get()
-                self.controller.input.set(old + event.char)
 
         def on_message(data: str) -> None:
             textarea.insert(tk.END, "\n" + data + "\n")
@@ -82,11 +79,9 @@ class Config:
 class Controller:
     def __init__(self, app: App) -> None:
         self.app = app
-        self.input = tk.StringVar(value="")
 
-    def submit(self) -> None:
-        self.on_message(self.input.get())
-        self.input.set("")
+    def submit(self, data: str) -> None:
+        self.on_message(data)
 
     def on_message(self, data: str) -> None:
         pass
