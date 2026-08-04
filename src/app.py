@@ -40,6 +40,21 @@ class App(tk.Tk):
         textarea = tk.Text(self.right, font=("monospace", 11))
         textarea.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        def on_input(event: tk.Event[tk.Text]) -> object:
+            if event.keysym == "Return":
+                self.controller.submit()
+                return "break"
+
+            elif event.char and event.char.isprintable():
+                old = self.controller.input.get()
+                self.controller.input.set(old + event.char)
+
+        def on_message(data: str) -> None:
+            textarea.insert(tk.END, "\n" + data + "\n")
+
+        textarea.bind("<Key>", on_input)
+        self.controller.on_message = on_message
+
 
 class Config:
     def __init__(self) -> None:
@@ -67,6 +82,14 @@ class Config:
 class Controller:
     def __init__(self, app: App) -> None:
         self.app = app
+        self.input = tk.StringVar(value="")
+
+    def submit(self) -> None:
+        self.on_message(self.input.get())
+        self.input.set("")
+
+    def on_message(self, data: str) -> None:
+        pass
 
 
 if __name__ == "__main__":
