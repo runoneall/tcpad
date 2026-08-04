@@ -22,17 +22,17 @@ class App(tk.Tk):
         self.right = tk.Frame(self)
         self.right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        notebook = ttk.Notebook(left)
-        notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.notebook = ttk.Notebook(left)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self.quick_input_area = tk.Frame(left)
         self.quick_input_area.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
 
-        self.client_tab = tk.Frame(notebook)
-        notebook.add(self.client_tab, text="客户端")
+        self.client_tab = tk.Frame(self.notebook)
+        self.notebook.add(self.client_tab, text="客户端")
 
-        self.server_tab = tk.Frame(notebook)
-        notebook.add(self.server_tab, text="服务器")
+        self.server_tab = tk.Frame(self.notebook)
+        self.notebook.add(self.server_tab, text="服务器")
 
         self.config = Config()
         self.controller = Controller(self)
@@ -40,6 +40,16 @@ class App(tk.Tk):
         self.ui()
 
     def ui(self) -> None:
+        last_tab_index = self.config.get("selected_tab_index")
+        if last_tab_index:
+            self.notebook.select(int(last_tab_index))
+
+        def on_tab_changed(_: tk.Event[ttk.Notebook]) -> object:
+            selected_index: int = self.notebook.index(self.notebook.select())
+            self.config.set("selected_tab_index", selected_index)
+
+        self.notebook.bind("<<NotebookTabChanged>>", on_tab_changed)
+
         for i in range(1, 11):
             row = tk.Frame(self.quick_input_area)
             row.pack(fill=tk.X, pady=2)
