@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import json
 import pathlib
 import tkinter as tk
+from tkinter import ttk
 from typing import Any
 
 
@@ -12,12 +15,21 @@ class App(tk.Tk):
         self.minsize(800, 600)
         self.geometry("800x600")
 
-        self.left = tk.Frame(self, bg="#dedede", width=260)
-        self.left.pack_propagate(False)
-        self.left.pack(side=tk.LEFT, fill=tk.Y)
+        left = tk.Frame(self, width=260)
+        left.pack_propagate(False)
+        left.pack(side=tk.LEFT, fill=tk.Y)
 
-        self.right = tk.Frame(self, bg="#eaeaea")
+        self.right = tk.Frame(self)
         self.right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        notebook = ttk.Notebook(left)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.client_tab = tk.Frame(notebook)
+        notebook.add(self.client_tab, text="客户端")
+
+        self.server_tab = tk.Frame(notebook)
+        notebook.add(self.server_tab, text="服务器")
 
         self.config = Config()
         self.controller = Controller(self)
@@ -25,7 +37,8 @@ class App(tk.Tk):
         self.ui()
 
     def ui(self) -> None:
-        pass
+        textarea = tk.Text(self.right, font=("monospace", 11))
+        textarea.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
 
 class Config:
