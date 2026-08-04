@@ -25,6 +25,9 @@ class App(tk.Tk):
         notebook = ttk.Notebook(left)
         notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        self.quick_input_area = tk.Frame(left)
+        self.quick_input_area.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
+
         self.client_tab = tk.Frame(notebook)
         notebook.add(self.client_tab, text="客户端")
 
@@ -37,17 +40,34 @@ class App(tk.Tk):
         self.ui()
 
     def ui(self) -> None:
+        for i in range(1, 11):
+            row = tk.Frame(self.quick_input_area)
+            row.pack(fill=tk.X, pady=2)
+
+            var = tk.StringVar(value="")
+            self.config.bind(f"quick_input_{i}", var)
+
+            entry = tk.Entry(row, textvariable=var)
+            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
+
+            def submit(var: tk.StringVar = var) -> Any:
+                self.controller.submit(var.get())
+
+            button = tk.Button(row, text="发送", command=submit)
+            button.pack(side=tk.RIGHT)
+
         textarea = tk.Text(self.right, font=("monospace", 11))
         textarea.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         def on_input(event: tk.Event[tk.Text]) -> object:
             if event.keysym == "Return":
                 data = textarea.get("insert linestart", "insert lineend").strip()
+                textarea.insert(tk.END, "\n")
                 self.controller.submit(data)
                 return "break"
 
         def on_message(data: str) -> None:
-            textarea.insert(tk.END, "\n" + data + "\n")
+            textarea.insert(tk.END, data + "\n")
 
         textarea.bind("<Key>", on_input)
         self.controller.on_message = on_message
