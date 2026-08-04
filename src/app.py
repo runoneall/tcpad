@@ -84,10 +84,10 @@ class Config:
 
     def load(self) -> dict[str, Any]:
         if not self.file.exists():
-            self.file.write_text("{}")
+            self.file.write_text("{}", encoding="utf-8")
             return {}
 
-        content = self.file.read_text()
+        content = self.file.read_text(encoding="utf-8")
         return json.loads(content)
 
     def get(self, name: str) -> Any | None:
@@ -97,7 +97,7 @@ class Config:
         self.obj[name] = value
 
         content = json.dumps(self.obj, ensure_ascii=False)
-        self.file.write_text(content)
+        self.file.write_text(content, encoding="utf-8")
 
     def bind(self, name: str, var: tk.Variable):
         value = self.get(name)
