@@ -75,6 +75,16 @@ class Config:
         content = json.dumps(self.obj, ensure_ascii=False)
         self.file.write_text(content)
 
+    def bind(self, name: str, var: tk.Variable):
+        value = self.get(name)
+        if value:
+            var.set(value)
+
+        def on_write(*_: Any) -> object:
+            self.set(name, var.get())
+
+        var.trace_add("write", on_write)
+
 
 class Controller:
     def __init__(self, app: App) -> None:
