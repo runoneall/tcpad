@@ -79,7 +79,7 @@ class App(tk.Tk):
                 if not data:
                     return
 
-                self.controller.submit(data)
+                self.controller.submit(data + "\n")
 
             button = tk.Button(row, text="发送", command=submit)
             button.pack(side=tk.RIGHT)
