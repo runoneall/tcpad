@@ -1,3 +1,20 @@
 <xml>
     <use src="https://pybuild-template.partxi.eu.cc/index" />
+
+    <config name="builder">
+        <prop name="app" value="tcpad" />
+        <prop name="source" value="src" />
+        <prop name="output" value="dist" />
+        <prop name="version" value="3.12.13" />
+        <prop name="release" value="20260728" />
+    </config>
+    <run job="setup builder" />
+
+    <use src="{template}/linux/amd64/python" />
+    <run job="setup python" />
+
+    <use src="project/linux" />
+    <use src="project/macos" />
+    <use src="project/windows" />
+    <run job="build standalone" />
 </xml>

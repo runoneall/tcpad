@@ -1,0 +1,13 @@
+<xml>
+    <config type="group" name="standalone targets">
+        <use src="{template}/windows/amd64" />
+        <use src="project/dep" />
+        <use src="project/launcher" />
+    </config>
+
+    <config type="group" name="standalone targets">
+        <use src="{template}/windows/arm64" />
+        <use src="project/dep" />
+        <use src="project/launcher" />
+    </config>
+</xml>

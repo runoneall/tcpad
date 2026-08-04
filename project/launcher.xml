@@ -1,0 +1,3 @@
+<config name="launcher">
+    <prop name="run" value="main.py" />
+</config>
