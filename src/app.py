@@ -64,6 +64,18 @@ class App(tk.Tk):
         tk.Button(client_button_frame, text="连接", width=8, command=self.controller.connect).pack(side=tk.LEFT, padx=5)
         tk.Button(client_button_frame, text="断开", width=8, command=self.controller.disconnect).pack(side=tk.LEFT, padx=5)
 
+        tk.Label(self.server_tab, text="本地 IP:").grid(row=0, column=0, padx=(10, 5), pady=8, sticky=tk.E)
+        tk.Entry(self.server_tab, textvariable=self.controller.server_ip).grid(row=0, column=1, padx=(0, 10), pady=8, sticky=tk.W)
+
+        tk.Label(self.server_tab, text="本地端口:").grid(row=1, column=0, padx=(10, 5), pady=8, sticky=tk.E)
+        tk.Spinbox(self.server_tab, from_=1, to=65535, increment=1, textvariable=self.controller.server_port).grid(row=1, column=1, padx=(0, 10), pady=8, sticky=tk.W)
+
+        server_button_frame = tk.Frame(self.server_tab)
+        server_button_frame.grid(row=2, column=0, columnspan=2, pady=15)
+
+        tk.Button(server_button_frame, text="启动", width=8, command=self.controller.start).pack(side=tk.LEFT, padx=5)
+        tk.Button(server_button_frame, text="停止", width=8, command=self.controller.stop).pack(side=tk.LEFT, padx=5)
+
         for i in range(1, 11):
             row = tk.Frame(self.quick_input_area)
             row.pack(fill=tk.X, pady=2)
@@ -144,7 +156,14 @@ class Controller:
         self.client_port = tk.IntVar(value=0)
         self.app.config.bind("client_port", self.client_port)
 
+        self.server_ip = tk.StringVar(value="")
+        self.app.config.bind("server_ip", self.server_ip)
+
+        self.server_port = tk.IntVar(value=0)
+        self.app.config.bind("server_port", self.server_port)
+
         self.sock: socket.socket | None = None
+        self.listener: socket.socket | None = None
 
     def submit(self, data: str) -> None:
         if self.sock:
@@ -162,8 +181,8 @@ class Controller:
         pass
 
     def connect(self) -> None:
-        if self.sock:
-            self.on_message("[系统] 当前已有活跃连接")
+        if self.sock or self.listener:
+            self.on_message("[系统] 当前已有活跃连接或服务")
             return
 
         ip = self.client_ip.get().strip()
@@ -209,6 +228,74 @@ class Controller:
 
             except Exception as e:
                 self.on_message(f"[系统] 断开连接时出错: {e}")
+
+    def start(self) -> None:
+        if self.sock or self.listener:
+            self.on_message("[系统] 当前已有活跃服务或连接")
+            return
+
+        ip = self.server_ip.get().strip()
+        port = self.server_port.get()
+
+        self.on_message(f"[系统] 正在启动服务器 {ip}:{port} ...")
+        try:
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind((ip, port))
+            listener.listen(1)
+            self.listener = listener
+            self.on_message(f"[系统] 等待客户端连接...")
+
+        except Exception as e:
+            self.on_message(f"[系统] 服务器启动失败: {e}")
+            return
+
+        def accept_thread() -> None:
+            try:
+                client_sock, client_addr = listener.accept()
+                listener.close()
+                self.listener = None
+
+                self.sock = client_sock
+                self.app.after(0, self.on_message, f"[系统] 客户端 {client_addr[0]}:{client_addr[1]} 已连接")
+
+                while self.sock:
+                    data = self.sock.recv(1024)
+                    if not data:
+                        self.app.after(0, self.on_message, "[系统] 客户端已断开连接")
+                        break
+
+                    text = data.decode("utf-8", errors="ignore")
+                    self.app.after(0, self.on_message, text)
+
+            except Exception:
+                pass
+
+            finally:
+                self.app.after(0, self.stop)
+
+        threading.Thread(target=accept_thread, daemon=True).start()
+
+    def stop(self) -> None:
+        if self.listener:
+            try:
+                self.listener.close()
+
+            except Exception:
+                pass
+
+            self.listener = None
+
+        sock = self.sock
+        self.sock = None
+
+        if sock:
+            try:
+                sock.close()
+                self.on_message("[系统] 服务器已停止")
+
+            except Exception as e:
+                self.on_message(f"[系统] 停止服务器时出错: {e}")
 
 
 if __name__ == "__main__":
