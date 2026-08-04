@@ -51,7 +51,11 @@ class App(tk.Tk):
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
 
             def submit(var: tk.StringVar = var) -> Any:
-                self.controller.submit(var.get())
+                data = var.get()
+                if not data:
+                    return
+
+                self.controller.submit(data)
 
             button = tk.Button(row, text="发送", command=submit)
             button.pack(side=tk.RIGHT)
