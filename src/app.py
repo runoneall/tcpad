@@ -8,7 +8,7 @@ class App(tk.Tk):
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk", useTk: bool = True, sync: bool = False, use: str | None = None) -> None:
         super().__init__(screenName, baseName, className, useTk, sync, use)
 
-        self.title("tcpad")
+        self.title("TCPad: TCP 客户端 & 服务器")
         self.minsize(800, 600)
         self.geometry("800x600")
 
