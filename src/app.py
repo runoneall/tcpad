@@ -111,7 +111,7 @@ class App(tk.Tk):
                 return "break"
 
         def on_message(data: str) -> None:
-            textarea.insert(tk.END, data.removesuffix("\n") + "\n")
+            textarea.insert(tk.END, data.rstrip("\n") + "\n")
 
         textarea.bind("<Key>", on_input)
         self.controller.on_message = on_message
