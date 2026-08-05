@@ -108,10 +108,13 @@ class App(tk.Tk):
                 data = textarea.get("insert linestart", "insert lineend").strip()
                 textarea.insert(tk.END, "\n")
                 self.controller.submit(data)
+
+                textarea.see(tk.END)
                 return "break"
 
         def on_message(data: str) -> None:
             textarea.insert(tk.END, data.rstrip("\n") + "\n")
+            textarea.see(tk.END)
 
         textarea.bind("<Key>", on_input)
         self.controller.on_message = on_message
