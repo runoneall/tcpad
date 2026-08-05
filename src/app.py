@@ -17,6 +17,10 @@ class App(tk.Tk):
         self.minsize(800, 600)
         self.geometry("800x600")
 
+        self.attributes("-topmost", True)
+        self.focus_force()
+        self.after(100, lambda: self.attributes("-topmost", False))
+
         left = tk.Frame(self, width=260)
         left.pack_propagate(False)
         left.pack(side=tk.LEFT, fill=tk.Y)
@@ -91,7 +95,7 @@ class App(tk.Tk):
                 if not data:
                     return
 
-                self.controller.submit(data + "\n")
+                self.controller.submit(data)
 
             button = tk.Button(row, text="发送", command=submit)
             button.pack(side=tk.RIGHT)
@@ -103,11 +107,11 @@ class App(tk.Tk):
             if event.keysym == "Return":
                 data = textarea.get("insert linestart", "insert lineend").strip()
                 textarea.insert(tk.END, "\n")
-                self.controller.submit(data + "\n")
+                self.controller.submit(data)
                 return "break"
 
         def on_message(data: str) -> None:
-            textarea.insert(tk.END, data + "\n")
+            textarea.insert(tk.END, data.removesuffix("\n") + "\n")
 
         textarea.bind("<Key>", on_input)
         self.controller.on_message = on_message
@@ -168,7 +172,7 @@ class Controller:
     def submit(self, data: str) -> None:
         if self.sock:
             try:
-                self.sock.sendall(data.encode("utf-8"))
+                self.sock.sendall((data + "\n").encode("utf-8"))
 
             except Exception as e:
                 self.on_message(f"[系统] 发送数据失败: {e}")
